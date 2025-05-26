@@ -13,7 +13,6 @@ interface Restaurant {
 const Admin = () => {
   const navigation = useNavigation();
   
-  
   const [restaurants, setRestaurants] = useState<Restaurant[]>([
     {
       id: '1',
