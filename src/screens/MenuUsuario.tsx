@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,32 +7,45 @@ import {
   StatusBar,
   SafeAreaView,
   Modal,
-  FlatList
+  FlatList,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { User, MessageSquare, ChevronDown } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const restaurants = [
-  { id: '1', name: 'Pizzaria Bella Vista' },
-  { id: '2', name: 'Burger House' },
-  { id: '3', name: 'Sushi Zen' },
-  { id: '4', name: 'Cantina da Nonna' },
-  { id: '5', name: 'Churrascaria Gaúcha' },
-];
-
 const MenuUsuario: React.FC<any> = ({ navigation }) => {
+  const [restaurants, setRestaurants] = useState<any[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<string>('');
   const [selectedRestaurantName, setSelectedRestaurantName] = useState<string>('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const handleRestaurantSelect = (restaurant: { id: string; name: string }) => {
-    setSelectedRestaurant(restaurant.id);
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const response = await fetch(process.env.EXPO_PUBLIC_API_URL + '/restaurants');
+        const data = await response.json();
+        setRestaurants(data);
+      } catch (err) {
+        console.log(err)
+      }
+      setLoading(false);
+    };
+    fetchRestaurants();
+  }, []);
+
+  const handleRestaurantSelect = async (restaurant: any) => {
+    setSelectedRestaurant(restaurant._id);
     setSelectedRestaurantName(restaurant.name);
     setModalVisible(false);
+    await AsyncStorage.setItem('selectedRestaurantId', restaurant._id);
   };
 
-  const renderRestaurantItem = ({ item }: { item: { id: string; name: string } }) => (
+
+  const renderRestaurantItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.modalItem}
       onPress={() => handleRestaurantSelect(item)}
@@ -98,7 +111,6 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
         <Text style={styles.footerText}>© 2025 - Todos os direitos reservados</Text>
       </View>
 
-      
       <Modal
         animationType="slide"
         transparent={true}
@@ -116,12 +128,16 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={restaurants}
-              renderItem={renderRestaurantItem}
-              keyExtractor={(item) => item.id}
-              style={styles.modalList}
-            />
+            {loading ? (
+              <ActivityIndicator size="large" color="#8A5A00" style={{ marginTop: 30 }} />
+            ) : (
+              <FlatList
+                data={restaurants}
+                renderItem={renderRestaurantItem}
+                keyExtractor={(item) => item._id}
+                style={styles.modalList}
+              />
+            )}
           </View>
         </View>
       </Modal>
