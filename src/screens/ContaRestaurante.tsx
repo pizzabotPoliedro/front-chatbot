@@ -10,21 +10,7 @@ import { AntDesign } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 
-type RootStackParamList = {
-  ContaRestaurante: undefined;
-  
-};
-
-type ContaRestauranteNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'ContaRestaurante'
->;
-
-type Props = {
-  navigation: ContaRestauranteNavigationProp;
-};
-
-const ContaRestaurante: React.FC<Props> = ({ navigation }) => {
+const ContaRestaurante: React.FC<any> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>

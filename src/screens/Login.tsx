@@ -15,17 +15,18 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+const Login: any = () => {
+  const [email, setEmail] = useState<any>('');
+  const [password, setPassword] = useState<any>('');
+  const [showPassword, setShowPassword] = useState<any>(false);
+  const [error, setError] = useState<any>('');
+  const [loading, setLoading] = useState<any>(false);
 
-  const navigation = useNavigation<any>();
+  const navigation: any = useNavigation();
 
-  const handleLogin = async () => {
+  const handleLogin = async (): Promise<any> => {
     setError('');
     setLoading(true);
 
@@ -36,11 +37,11 @@ const Login = () => {
     }
 
     try {
-      const formData = new FormData();
+      const formData: any = new FormData();
       formData.append('email', email);
       formData.append('password', password);
 
-      const response = await fetch(process.env.EXPO_PUBLIC_API_URL + '/login', {
+      const response: any = await fetch((process as any).env.EXPO_PUBLIC_API_URL + '/login', {
         method: 'POST',
         body: formData,
         headers: {
@@ -48,33 +49,31 @@ const Login = () => {
         },
       });
 
-      const data = await response.json();
+      const data: any = await response.json();
 
       if (response.ok && data.token) {
         await AsyncStorage.setItem('token', data.token);
-        const decodedToken = JSON.parse(atob(data.token.split('.')[1]));
-        console.log(decodedToken.restaurant);
+        const decodedToken: any = jwtDecode(data.token);
         if (decodedToken.restaurant) {
           navigation.navigate('Index');
-        }
-        else {
+        } else {
           navigation.navigate('MenuUsuario');
         }
       } else {
         setError(data.error || 'Email ou senha inválidos.');
       }
-    } catch (err) {
+    } catch (err: any) {
       setError('Erro ao conectar. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const navigateToCadastro = () => {
+  const navigateToCadastro = (): any => {
     navigation.navigate('Cadastro');
   };
 
-  const navigateToCadastroRestaurante = () => {
+  const navigateToCadastroRestaurante = (): any => {
     navigation.navigate('CadastroRestaurante');
   };
 
@@ -167,7 +166,7 @@ const Login = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles: any = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF8E1',

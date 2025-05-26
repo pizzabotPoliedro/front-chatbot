@@ -17,14 +17,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
-interface DaySchedule {
-  day: string;
-  open: string | null;
-  close: string | null;
-}
-
-const dayMap: { [key: string]: string } = {
+const dayMap: any = {
   monday: 'Segunda-feira',
   tuesday: 'Terça-feira',
   wednesday: 'Quarta-feira',
@@ -34,25 +29,25 @@ const dayMap: { [key: string]: string } = {
   sunday: 'Domingo',
 };
 
-const reverseDayMap: { [key: string]: string } = Object.fromEntries(
+const reverseDayMap: any = Object.fromEntries(
   Object.entries(dayMap).map(([en, pt]) => [pt, en])
 );
 
-const HorarioFuncionamento = () => {
-  const navigation = useNavigation();
-  const [schedules, setSchedules] = useState<DaySchedule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
-  const [tempOpenTime, setTempOpenTime] = useState('');
-  const [tempCloseTime, setTempCloseTime] = useState('');
-  const [email, setEmail] = useState<string | null>(null);
+const HorarioFuncionamento: any = () => {
+  const navigation: any = useNavigation();
+  const [schedules, setSchedules] = useState<any>([]);
+  const [loading, setLoading] = useState<any>(true);
+  const [editModalVisible, setEditModalVisible] = useState<any>(false);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<any>(null);
+  const [tempOpenTime, setTempOpenTime] = useState<any>('');
+  const [tempCloseTime, setTempCloseTime] = useState<any>('');
+  const [email, setEmail] = useState<any>(null);
 
   useEffect(() => {
-    const initialize = async () => {
-      const jwt = await AsyncStorage.getItem('token');
+    const initialize = async (): Promise<any> => {
+      const jwt: any = await AsyncStorage.getItem('token');
       if (jwt) {
-        const payload = JSON.parse(atob(jwt.split('.')[1]));
+        const payload: any = jwtDecode(jwt);
         setEmail(payload.email);
         await fetchSchedules(payload.email);
       }
@@ -60,13 +55,13 @@ const HorarioFuncionamento = () => {
     initialize();
   }, []);
 
-  const fetchSchedules = async (userEmail: string) => {
+  const fetchSchedules = async (userEmail: any): Promise<any> => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/${userEmail}/schedule`);
+      const res: any = await fetch((process as any).env.EXPO_PUBLIC_API_URL + `/users/${userEmail}/schedule`);
       if (!res.ok) throw new Error('Erro ao buscar horários');
-      const data = await res.json();
-      const days: DaySchedule[] = [
+      const data: any = await res.json();
+      const days: any = [
         'monday',
         'tuesday',
         'wednesday',
@@ -74,7 +69,7 @@ const HorarioFuncionamento = () => {
         'friday',
         'saturday',
         'sunday',
-      ].map((day) => ({
+      ].map((day: any) => ({
         day: dayMap[day],
         open: data[day]?.open ?? null,
         close: data[day]?.close ?? null,
@@ -87,21 +82,20 @@ const HorarioFuncionamento = () => {
   };
 
   const updateSchedule = async (
-    dayPt: string,
-    open: string | null,
-    close: string | null
-  ) => {
+    dayPt: any,
+    open: any,
+    close: any
+  ): Promise<any> => {
     if (!email) return;
-    const dayEn = reverseDayMap[dayPt];
+    const dayEn: any = reverseDayMap[dayPt];
     const body: any = { day: dayEn };
     body.open = open === '' ? null : open;
     body.close = close === '' ? null : close;
     if (body.open === undefined) delete body.open;
     if (body.close === undefined) delete body.close;
     try {
-      console.log(body)
-      const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/users/${email}/schedule`,
+      const res: any = await fetch(
+        (process as any).env.EXPO_PUBLIC_API_URL + `/users/${email}/schedule`,
         {
           method: 'PUT',
           headers: {
@@ -116,45 +110,45 @@ const HorarioFuncionamento = () => {
     }
   };
 
-  const openEditModal = (index: number) => {
+  const openEditModal = (index: any): any => {
     setSelectedDayIndex(index);
     setTempOpenTime(schedules[index].open ?? '');
     setTempCloseTime(schedules[index].close ?? '');
     setEditModalVisible(true);
   };
 
-  const formatTimeInput = (text: string): string => {
-    const digits = text.replace(/\D/g, '');
+  const formatTimeInput = (text: any): any => {
+    const digits: any = text.replace(/\D/g, '');
     if (digits.length <= 2) {
       return digits;
     } else {
-      const hours = digits.substring(0, 2);
-      const minutes = digits.substring(2, 4);
-      const hoursNum = parseInt(hours, 10);
-      const validHours = hoursNum > 23 ? '23' : hours;
-      const minutesNum = parseInt(minutes, 10);
-      const validMinutes = minutesNum > 59 ? '59' : minutes;
+      const hours: any = digits.substring(0, 2);
+      const minutes: any = digits.substring(2, 4);
+      const hoursNum: any = parseInt(hours, 10);
+      const validHours: any = hoursNum > 23 ? '23' : hours;
+      const minutesNum: any = parseInt(minutes, 10);
+      const validMinutes: any = minutesNum > 59 ? '59' : minutes;
       return `${validHours}:${validMinutes}`;
     }
   };
 
-  const handleOpenTimeChange = (text: string) => {
+  const handleOpenTimeChange = (text: any): any => {
     setTempOpenTime(formatTimeInput(text));
   };
 
-  const handleCloseTimeChange = (text: string) => {
+  const handleCloseTimeChange = (text: any): any => {
     setTempCloseTime(formatTimeInput(text));
   };
 
-  const saveTimeChanges = async () => {
+  const saveTimeChanges = async (): Promise<any> => {
     if (selectedDayIndex !== null) {
       if (!tempOpenTime || !tempCloseTime) {
         Alert.alert('Erro', 'Por favor, preencha todos os horários');
         return;
       }
-      const formattedOpenTime = formatTimeDisplay(tempOpenTime);
-      const formattedCloseTime = formatTimeDisplay(tempCloseTime);
-      const newSchedules = [...schedules];
+      const formattedOpenTime: any = formatTimeDisplay(tempOpenTime);
+      const formattedCloseTime: any = formatTimeDisplay(tempCloseTime);
+      const newSchedules: any = [...schedules];
       newSchedules[selectedDayIndex] = {
         ...newSchedules[selectedDayIndex],
         open: formattedOpenTime,
@@ -170,7 +164,7 @@ const HorarioFuncionamento = () => {
     }
   };
 
-  const formatTimeDisplay = (time: string): string => {
+  const formatTimeDisplay = (time: any): any => {
     if (time.includes(':')) {
       const [hours, minutes] = time.split(':');
       const formattedHours = hours.padStart(2, '0');
@@ -183,9 +177,9 @@ const HorarioFuncionamento = () => {
     }
   };
 
-  const toggleDayStatus = async (index: number) => {
-    const newSchedules = [...schedules];
-    const isOpen = !(newSchedules[index].open === null && newSchedules[index].close === null);
+  const toggleDayStatus = async (index: any): Promise<any> => {
+    const newSchedules: any = [...schedules];
+    const isOpen: any = !(newSchedules[index].open === null && newSchedules[index].close === null);
     if (isOpen) {
       newSchedules[index].open = null;
       newSchedules[index].close = null;
@@ -201,11 +195,11 @@ const HorarioFuncionamento = () => {
     );
   };
 
-  const formatTime = (time: string | null) => {
+  const formatTime = (time: any): any => {
     return time ?? '--:--';
   };
 
-  const dismissKeyboard = () => {
+  const dismissKeyboard = (): any => {
     Keyboard.dismiss();
   };
 
@@ -228,8 +222,8 @@ const HorarioFuncionamento = () => {
           <View style={{ width: 24 }} />
         </View>
         <ScrollView style={styles.content}>
-          {schedules.map((schedule, index) => {
-            const isOpen = schedule.open !== null && schedule.close !== null;
+          {schedules.map((schedule: any, index: any) => {
+            const isOpen: any = schedule.open !== null && schedule.close !== null;
             return (
               <View key={schedule.day} style={styles.dayCard}>
                 <View style={styles.dayInfo}>
@@ -325,7 +319,7 @@ const HorarioFuncionamento = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles: any = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FCF5E5',

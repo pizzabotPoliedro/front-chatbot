@@ -14,17 +14,6 @@ import { ArrowLeft, Clock, Check, X, ShoppingBag } from 'lucide-react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 
-type RootStackParamList = {
-  Pedidos: undefined;
-  
-};
-
-type PedidosNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Pedidos'>;
-
-type PedidosProps = {
-  navigation: PedidosNavigationProp;
-};
-
 type OrderStatusType = 'Entregue' | 'Em Progresso' | 'Cancelado';
 
 type OrderStatusProps = {
@@ -139,7 +128,7 @@ const EmptyState = ({ filterStatus }: { filterStatus: 'all' | OrderStatusType })
   );
 };
 
-const Pedidos = ({ navigation }: PedidosProps) => {
+const Pedidos = ({ navigation }: any) => {
   const [orders, setOrders] = useState<Order[]>([
     {
       id: '1234',

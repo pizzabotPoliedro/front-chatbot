@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -8,27 +8,37 @@ import {
 } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
+const ContaUsuario: React.FC<any> = ({ navigation }) => {
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
 
-type RootStackParamList = {
-  ContaUsuario: undefined;
-  
-};
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        const decoded: any = jwtDecode(token);
+        setName(decoded?.name || '');
+        setEmail(decoded?.email || '');
+        setPhone(decoded?.phone || '');
+      }
+    };
+    fetchUserData();
+  }, []);
 
-type ContaUsuarioNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'ContaUsuario'
->; 
+  const getInitials = (fullName: string) => {
+    if (!fullName) return '';
+    const names = fullName.trim().split(' ');
+    if (names.length === 1) return names[0][0].toUpperCase();
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+  };
 
-type Props = {
-  navigation: ContaUsuarioNavigationProp;
-};
-
-const ContaUsuario: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -36,38 +46,28 @@ const ContaUsuario: React.FC<Props> = ({ navigation }) => {
           <AntDesign name="arrowleft" size={20} color="#8A5A00" />
           <Text style={styles.backText}>Voltar</Text>
         </TouchableOpacity>
-        
-        
         <View style={styles.greeting}>
           <Text style={styles.greetingSubtext}>Olá,</Text>
-          <Text style={styles.greetingName}>José Alves</Text>
+          <Text style={styles.greetingName}>{name || 'Usuário'}</Text>
         </View>
-        
-        
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>JA</Text>
+            <Text style={styles.avatarText}>{getInitials(name)}</Text>
           </View>
         </View>
-        
-        
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Dados</Text>
           <View style={styles.divider} />
-          
           <View style={styles.dataRow}>
             <Text style={styles.dataLabel}>E-mail</Text>
-            <Text style={styles.dataValue}>jose@usuario.com</Text>
+            <Text style={styles.dataValue}>{email}</Text>
           </View>
-          
           <View style={styles.dataRow}>
             <Text style={styles.dataLabel}>Telefone</Text>
-            <Text style={styles.dataValue}>(11)91223322</Text>
+            <Text style={styles.dataValue}>{phone}</Text>
           </View>
         </View>
       </View>
-      
-      
       <View style={styles.footer}>
         <Text style={styles.footerText}>© 2025 - Todos os direitos reservados</Text>
       </View>

@@ -1,49 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
-const Index = () => {
-  const navigation = useNavigation<any>();
+const Index: any = () => {
+  const navigation: any = useNavigation();
+  const [restaurantName, setRestaurantName] = useState<any>(null);
 
-  function parseJwt(token: string | null): any {
-    if (!token) return null;
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch (e) {
-      return null;
-    }
-  }
+  useEffect(() => {
+    const fetchRestaurantName = async (): Promise<any> => {
+      try {
+        const token: any = await AsyncStorage.getItem('token');
+        if (token) {
+          const decoded: any = jwtDecode(token);
+          setRestaurantName(decoded?.name || null);
+        }
+      } catch (e: any) {
+        setRestaurantName(null);
+      }
+    };
+    fetchRestaurantName();
+  }, []);
 
-  const getRestaurantName = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const payload = parseJwt(token);
-      return payload?.name || null;
-    } catch (error) {
-      return null;
-    }
-  };
-
- 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Gerenciamento</Text>
-          <Text style={styles.subtitle}>{getRestaurantName()}</Text>
+          <Text style={styles.subtitle}>{restaurantName || 'Carregando...'}</Text>
         </View>
-        
         <View style={styles.cardsContainer}>
           <TouchableOpacity 
             style={styles.card} 
@@ -54,7 +42,6 @@ const Index = () => {
             </View>
             <Text style={styles.cardTitle}>Cardápio</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity 
             style={styles.card} 
             onPress={() => navigation.navigate('Pedidos')}
@@ -65,7 +52,6 @@ const Index = () => {
             <Text style={styles.cardTitle}>Pedidos</Text>
           </TouchableOpacity>
         </View>
-
         <TouchableOpacity 
           style={styles.smallButton} 
           onPress={() => navigation.navigate('HorarioFuncionamento')}
@@ -74,7 +60,6 @@ const Index = () => {
           <Text style={styles.smallButtonText}>Horários de Funcionamento</Text>
         </TouchableOpacity>
       </View>
-      
       <View style={styles.footer}>
         <Text style={styles.footerText}>© {new Date().getFullYear()} - Todos os direitos reservados</Text>
       </View>
@@ -82,7 +67,7 @@ const Index = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles: any = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FCF5E5',

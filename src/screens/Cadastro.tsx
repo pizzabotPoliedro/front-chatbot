@@ -15,20 +15,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
-type RootStackParamList = {
-  Home: undefined;
-  Cadastro: undefined;
-};
 
-type CadastroScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Cadastro'
->;
-
-type CadastroProps = {
-  navigation: CadastroScreenNavigationProp;
-  route?: RouteProp<RootStackParamList, 'Cadastro'>; 
-};
 
 const Cadastro: React.FC<any> = ({ navigation }) => {
   const [formData, setFormData] = useState({

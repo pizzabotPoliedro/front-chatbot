@@ -13,22 +13,6 @@ import { User, MessageSquare, ChevronDown } from 'lucide-react-native';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type RootStackParamList = {
-  UserMenu: undefined;
-  TelaChat: undefined;
-  ContaUsuario: undefined;
-};
-
-type UserMenuNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'UserMenu'
->;
-
-type Props = {
-  navigation: UserMenuNavigationProp;
-};
-
-
 const restaurants = [
   { id: '1', name: 'Pizzaria Bella Vista' },
   { id: '2', name: 'Burger House' },
@@ -37,7 +21,7 @@ const restaurants = [
   { id: '5', name: 'Churrascaria Gaúcha' },
 ];
 
-const MenuUsuario: React.FC<Props> = ({ navigation }) => {
+const MenuUsuario: React.FC<any> = ({ navigation }) => {
   const [selectedRestaurant, setSelectedRestaurant] = useState<string>('');
   const [selectedRestaurantName, setSelectedRestaurantName] = useState<string>('');
   const [modalVisible, setModalVisible] = useState(false);
