@@ -42,6 +42,7 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
     setSelectedRestaurantName(restaurant.name);
     setModalVisible(false);
     await AsyncStorage.setItem('selectedRestaurantId', restaurant._id);
+    await AsyncStorage.setItem('selectedRestaurantEmail', restaurant.email);
   };
 
 
