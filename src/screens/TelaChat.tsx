@@ -24,6 +24,22 @@ import { ArrowLeft, Send, MessageCircle, X, Trash } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 
+type MenuItem = {
+  _id: string;
+  name: string;
+  price: number;
+  image?: string;
+  description?: string;
+};
+
+type CarrinhoItem = {
+  item_id: string;
+  item_name: string;
+  item_price: number;
+  quantity: number;
+  image?: string;
+};
+
 const COLORS = {
   background: '#FCF5E5',
   modalBg: 'rgba(0,0,0,0.38)',
@@ -48,11 +64,19 @@ const diasSemana = [
   { key: 'sunday', label: 'Domingo' }
 ];
 
-const formatarHora = (data: any) => {
+const formatarHora = (data: Date) => {
   return `${data.getHours().toString().padStart(2, '0')}:${data.getMinutes().toString().padStart(2, '0')}`;
 };
 
-const AnimatedModal = ({ visible, children, onRequestClose }: any) => {
+const AnimatedModal = ({
+  visible,
+  children,
+  onRequestClose,
+}: {
+  visible: boolean;
+  children: React.ReactNode;
+  onRequestClose: () => void;
+}) => {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(60)).current;
 
@@ -104,7 +128,7 @@ const AnimatedModal = ({ visible, children, onRequestClose }: any) => {
   );
 };
 
-const ModalFecharButton = ({ onPress }: any) => {
+const ModalFecharButton = ({ onPress }: { onPress: () => void }) => {
   const scale = useRef(new Animated.Value(1)).current;
   return (
     <TouchableOpacity
@@ -124,11 +148,17 @@ const ModalFecharButton = ({ onPress }: any) => {
   );
 };
 
-const HorarioFuncionamento = ({ data, onClose }: any) => (
+const HorarioFuncionamento = ({
+  data,
+  onClose,
+}: {
+  data: any;
+  onClose: () => void;
+}) => (
   <View style={styles.modalContent}>
     <Text style={styles.modalTitle}>Horário de Funcionamento</Text>
     <ScrollView style={{width:'100%'}} contentContainerStyle={{alignItems:'center', paddingBottom: 12}}>
-      {diasSemana.map((dia: any, idx: any) => {
+      {diasSemana.map((dia, idx) => {
         const info = data[dia.key];
         const fechado = !info || !info.open || !info.close;
         return (
@@ -152,14 +182,22 @@ const HorarioFuncionamento = ({ data, onClose }: any) => (
   </View>
 );
 
-const CardapioModal = ({ items, onLongPressItem, onClose }: any) => (
+const CardapioModal = ({
+  items,
+  onLongPressItem,
+  onClose,
+}: {
+  items: MenuItem[];
+  onLongPressItem: (item: MenuItem) => void;
+  onClose: () => void;
+}) => (
   <View style={styles.modalContent}>
     <Text style={styles.modalTitle}>Cardápio</Text>
     {items.length === 0 ? (
       <Text style={styles.cardapioVazio}>Nenhum item encontrado.</Text>
     ) : (
       <ScrollView showsVerticalScrollIndicator={false} style={{width:'100%'}} contentContainerStyle={{paddingBottom: 12}}>
-        {items.map((item: any) => (
+        {items.map((item) => (
           <Pressable
             key={item._id}
             style={({ pressed }) => [styles.menuItemContainer, pressed && styles.menuItemPressed]}
@@ -190,7 +228,13 @@ const CardapioModal = ({ items, onLongPressItem, onClose }: any) => (
   </View>
 );
 
-const CardapioDetalheModal = ({ item, onClose }: any) => (
+const CardapioDetalheModal = ({
+  item,
+  onClose,
+}: {
+  item: MenuItem;
+  onClose: () => void;
+}) => (
   <View style={styles.detalheModalContainer}>
     <TouchableOpacity style={styles.detalheFechar} onPress={onClose}>
       <X size={28} color={COLORS.accentDark} />
@@ -220,7 +264,7 @@ const ThreeDotsLoader = () => {
   const dot3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const animateDot = (dot: any, delay: any) => {
+    const animateDot = (dot: Animated.Value, delay: number) => {
       Animated.loop(
         Animated.sequence([
           Animated.timing(dot, {
@@ -243,7 +287,6 @@ const ThreeDotsLoader = () => {
     animateDot(dot2, 150);
     animateDot(dot3, 300);
   }, []);
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', height: 24 }}>
       <Animated.View style={[styles.dot, { transform: [{ translateY: dot1 }] }]} />
@@ -253,11 +296,151 @@ const ThreeDotsLoader = () => {
   );
 };
 
+const PedidoModal = ({
+  items,
+  carrinho,
+  setCarrinho,
+  onClose,
+  onEnviarPedido,
+  loading,
+}: {
+  items: MenuItem[];
+  carrinho: CarrinhoItem[];
+  setCarrinho: (carrinho: CarrinhoItem[]) => void;
+  onClose: () => void;
+  onEnviarPedido: () => void;
+  loading: boolean;
+}) => {
+  const adicionarAoCarrinho = (item: MenuItem) => {
+    const existente = carrinho.find(i => i.item_id === item._id);
+    if (existente) {
+      setCarrinho(
+        carrinho.map(i =>
+          i.item_id === item._id
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        )
+      );
+    } else {
+      setCarrinho([
+        ...carrinho,
+        {
+          item_id: item._id,
+          item_name: item.name,
+          item_price: item.price,
+          quantity: 1,
+          image: item.image,
+        },
+      ]);
+    }
+  };
+
+  const removerDoCarrinho = (item_id: string) => {
+    setCarrinho(carrinho.filter(i => i.item_id !== item_id));
+  };
+
+  const alterarQuantidade = (item_id: string, delta: number) => {
+    setCarrinho(
+      carrinho.map(i =>
+        i.item_id === item_id
+          ? { ...i, quantity: Math.max(1, i.quantity + delta) }
+          : i
+      )
+    );
+  };
+
+  const valorTotal = carrinho.reduce(
+    (acc, item) => acc + item.item_price * item.quantity,
+    0
+  );
+
+  return (
+    <View style={[styles.modalContent, { minHeight: 500, maxHeight: 650 }]}>
+      <Text style={styles.modalTitle}>Fazer Pedido</Text>
+      <ScrollView style={{ width: '100%' }} contentContainerStyle={{ paddingBottom: 16 }}>
+        <Text style={{ fontWeight: 'bold', marginBottom: 6 }}>Itens do cardápio:</Text>
+        {items.length === 0 ? (
+          <Text style={styles.cardapioVazio}>Nenhum item disponível.</Text>
+        ) : (
+          items.map(item => (
+            <View key={item._id} style={styles.menuItemContainer}>
+              {item.image ? (
+                <Image
+                  source={{ uri: `data:image/png;base64,${item.image}` }}
+                  style={styles.menuItemImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.menuImagePlaceholder}>
+                  <Text style={styles.menuImagePlaceholderText}>Sem imagem</Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuItemName}>{item.name}</Text>
+                <Text style={styles.menuItemPrice}>R$ {item.price}</Text>
+              </View>
+              <TouchableOpacity
+                style={{ backgroundColor: COLORS.accent, borderRadius: 8, padding: 8 }}
+                onPress={() => adicionarAoCarrinho(item)}
+              >
+                <Text style={{ color: COLORS.white, fontWeight: 'bold' }}>Adicionar</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+        <Text style={{ fontWeight: 'bold', marginVertical: 10 }}>Seu pedido:</Text>
+        {carrinho.length === 0 ? (
+          <Text style={{ color: COLORS.accentDark }}>Nenhum item no pedido.</Text>
+        ) : (
+          carrinho.map(item => (
+            <View key={item.item_id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              {item.image ? (
+                <Image
+                  source={{ uri: `data:image/png;base64,${item.image}` }}
+                  style={{ width: 40, height: 40, borderRadius: 10, marginRight: 10, borderWidth: 1.5, borderColor: COLORS.accent, backgroundColor: COLORS.white }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={{ width: 40, height: 40, borderRadius: 10, marginRight: 10, backgroundColor: COLORS.accentSoft, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.accent }}>
+                  <Text style={styles.menuImagePlaceholderText}>Sem imagem</Text>
+                </View>
+              )}
+              <Text style={{ flex: 1 }}>{item.item_name} (R$ {item.item_price})</Text>
+              <TouchableOpacity onPress={() => alterarQuantidade(item.item_id, -1)}>
+                <Text style={{ fontSize: 20, marginHorizontal: 8 }}>-</Text>
+              </TouchableOpacity>
+              <Text>{item.quantity}</Text>
+              <TouchableOpacity onPress={() => alterarQuantidade(item.item_id, 1)}>
+                <Text style={{ fontSize: 20, marginHorizontal: 8 }}>+</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => removerDoCarrinho(item.item_id)}>
+                <Text style={{ color: COLORS.red, fontWeight: 'bold', marginLeft: 12 }}>Remover</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+      </ScrollView>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '98%', marginTop: 12, marginBottom: 4, backgroundColor: COLORS.white, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 10, borderWidth: 1.2, borderColor: COLORS.accent }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.accentDark }}>Total:</Text>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: COLORS.accent }}>R$ {valorTotal.toFixed(2)}</Text>
+      </View>
+      <TouchableOpacity
+        style={[styles.fecharBtn, { marginTop: 12, backgroundColor: COLORS.green }]}
+        onPress={onEnviarPedido}
+        disabled={loading || carrinho.length === 0}
+      >
+        {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.fecharBtnText}>Enviar Pedido</Text>}
+      </TouchableOpacity>
+      <ModalFecharButton onPress={onClose} />
+    </View>
+  );
+};
+
 const STORAGE_KEY = 'chatMessages';
 
-const TelaChat = ({ navigation }: any) => {
+const TelaChat = ({ navigation }: { navigation: any }) => {
   const [mensagem, setMensagem] = useState('');
-  const [mensagens, setMensagens] = useState<any[]>([
+  const [mensagens, setMensagens] = useState<{ id: string; texto: string; enviada: boolean; timestamp: Date; loading?: boolean }[]>([
     {
       id: '1',
       texto: 'Olá! Sou o assistente virtual do restaurante. Como posso ajudá-lo hoje?',
@@ -265,18 +448,23 @@ const TelaChat = ({ navigation }: any) => {
       timestamp: new Date()
     }
   ]);
-  const [userId, setUserId] = useState<any>(null);
-  const [restaurantId, setRestaurantId] = useState<any>(null);
-  const [restaurantEmail, setRestaurantEmail] = useState<any>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [restaurantEmail, setRestaurantEmail] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState<any>(null);
-  const [modalType, setModalType] = useState<any>(null);
+  const [modalType, setModalType] = useState<string | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
 
   const [detalheVisible, setDetalheVisible] = useState(false);
-  const [detalheItem, setDetalheItem] = useState<any>(null);
+  const [detalheItem, setDetalheItem] = useState<MenuItem | null>(null);
 
   const [aguardandoResposta, setAguardandoResposta] = useState(false);
+
+  const [pedidoModalVisible, setPedidoModalVisible] = useState(false);
+  const [pedidoCarrinho, setPedidoCarrinho] = useState<CarrinhoItem[]>([]);
+  const [pedidoLoading, setPedidoLoading] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -324,7 +512,7 @@ const TelaChat = ({ navigation }: any) => {
     salvarMensagens();
   }, [mensagens, userId, restaurantId]);
 
-  const buscarHistorico = async (user_id: any, restaurant: any) => {
+  const buscarHistorico = async (user_id: string, restaurant: string) => {
     try {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/chat`, {
         method: 'GET',
@@ -393,6 +581,65 @@ const TelaChat = ({ navigation }: any) => {
     setModalLoading(false);
   };
 
+  const abrirModalPedido = async () => {
+    if (!restaurantId) return;
+    setPedidoLoading(true);
+    setPedidoModalVisible(true);
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/menu/${restaurantId}`, { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItems(data.items || []);
+      } else {
+        setMenuItems([]);
+      }
+    } catch {
+      setMenuItems([]);
+    }
+    setPedidoLoading(false);
+  };
+
+ const enviarPedido = async () => {
+  if (!userId || !restaurantId || pedidoCarrinho.length === 0) return;
+  setPedidoLoading(true);
+  try {
+    const itemsParaEnvio = pedidoCarrinho.map(item => ({
+      item_id: item.item_id,
+      item_name: item.item_name,
+      item_price: Number(item.item_price),
+      quantity: item.quantity
+    }));
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: itemsParaEnvio,
+        restaurant_id: restaurantId,
+        user_id: userId
+      })
+    });
+    if (response.ok) {
+      Alert.alert('Pedido enviado!', 'Seu pedido foi realizado com sucesso.');
+      setPedidoCarrinho([]);
+      setPedidoModalVisible(false);
+      setMensagens(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          texto: 'Seu pedido foi realizado com sucesso!',
+          enviada: false,
+          timestamp: new Date()
+        }
+      ]);
+    } else {
+      Alert.alert('Erro', 'Não foi possível enviar o pedido.');
+    }
+  } catch {
+    Alert.alert('Erro', 'Não foi possível enviar o pedido.');
+  }
+  setPedidoLoading(false);
+  };
+
   const enviarMensagem = async () => {
     if (mensagem.trim() === '' || !userId || !restaurantId) return;
     const novaMensagemUsuario = {
@@ -401,11 +648,10 @@ const TelaChat = ({ navigation }: any) => {
       enviada: true,
       timestamp: new Date()
     };
-    setMensagens((prev: any) => [...prev, novaMensagemUsuario]);
+    setMensagens((prev) => [...prev, novaMensagemUsuario]);
     setMensagem('');
-
     const idLoading = 'loading-bot-' + Date.now();
-    setMensagens((prev: any) => [
+    setMensagens((prev) => [
       ...prev,
       {
         id: idLoading,
@@ -416,13 +662,10 @@ const TelaChat = ({ navigation }: any) => {
       }
     ]);
     setAguardandoResposta(true);
-
     try {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: novaMensagemUsuario.texto,
           restaurant: restaurantId,
@@ -437,16 +680,17 @@ const TelaChat = ({ navigation }: any) => {
           enviada: false,
           timestamp: new Date(data.created_at)
         };
-        setMensagens((prev: any) => [
-          ...prev.filter((msg: any) => msg.id !== idLoading),
+        setMensagens((prev) => [
+          ...prev.filter((msg) => msg.id !== idLoading),
           respostaBot
         ]);
         setAguardandoResposta(false);
         if (data.schedule) abrirModalHorario();
         if (data.menu) abrirModalMenu();
+        if (data.order) abrirModalPedido();
       } else {
-        setMensagens((prev: any) => [
-          ...prev.filter((msg: any) => msg.id !== idLoading),
+        setMensagens((prev) => [
+          ...prev.filter((msg) => msg.id !== idLoading),
           {
             id: Date.now().toString(),
             texto: 'Erro ao obter resposta do assistente.',
@@ -457,8 +701,8 @@ const TelaChat = ({ navigation }: any) => {
         setAguardandoResposta(false);
       }
     } catch (error) {
-      setMensagens((prev: any) => [
-        ...prev.filter((msg: any) => msg.id !== idLoading),
+      setMensagens((prev) => [
+        ...prev.filter((msg) => msg.id !== idLoading),
         {
           id: Date.now().toString(),
           texto: 'Erro ao obter resposta do assistente.',
@@ -497,7 +741,7 @@ const TelaChat = ({ navigation }: any) => {
     );
   };
 
-  const renderMensagem = ({ item }: any) => (
+  const renderMensagem = ({ item }: { item: any }) => (
     <View style={[
       styles.mensagemContainer,
       item.enviada ? styles.mensagemEnviada : styles.mensagemRecebida
@@ -513,7 +757,7 @@ const TelaChat = ({ navigation }: any) => {
     </View>
   );
 
-  const handleLongPressItem = (item: any) => {
+  const handleLongPressItem = (item: MenuItem) => {
     setDetalheItem(item);
     setDetalheVisible(true);
   };
@@ -548,6 +792,19 @@ const TelaChat = ({ navigation }: any) => {
             )}
           </>
         )}
+      </AnimatedModal>
+      <AnimatedModal
+        visible={pedidoModalVisible}
+        onRequestClose={() => setPedidoModalVisible(false)}
+      >
+        <PedidoModal
+          items={menuItems}
+          carrinho={pedidoCarrinho}
+          setCarrinho={setPedidoCarrinho}
+          onClose={() => setPedidoModalVisible(false)}
+          onEnviarPedido={enviarPedido}
+          loading={pedidoLoading}
+        />
       </AnimatedModal>
       <Modal
         visible={detalheVisible}
@@ -584,7 +841,7 @@ const TelaChat = ({ navigation }: any) => {
         style={styles.listaMensagens}
         data={mensagens}
         renderItem={renderMensagem}
-        keyExtractor={(item: any) => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.conteudoLista}
         inverted={false}
       />
