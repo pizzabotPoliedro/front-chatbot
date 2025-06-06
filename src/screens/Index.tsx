@@ -1,29 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 
-const Index: any = () => {
-  const navigation: any = useNavigation();
-  const [restaurantName, setRestaurantName] = useState<any>(null);
+type RootStackParamList = {
+  Login: undefined;
+  Cardapio: undefined;
+  Pedidos: undefined;
+  HorarioFuncionamento: undefined;
+};
+
+const Index: React.FC = () => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [restaurantName, setRestaurantName] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchRestaurantName = async (): Promise<any> => {
+    const fetchRestaurantName = async (): Promise<void> => {
       try {
-        const token: any = await AsyncStorage.getItem('token');
+        const token: string | null = await AsyncStorage.getItem('token');
         if (token) {
           const decoded: any = jwtDecode(token);
           setRestaurantName(decoded?.name || null);
         }
-      } catch (e: any) {
+      } catch {
         setRestaurantName(null);
       }
     };
     fetchRestaurantName();
   }, []);
+
+  const handleLogout = async (): Promise<void> => {
+    await AsyncStorage.clear();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -60,6 +75,12 @@ const Index: any = () => {
           <Text style={styles.smallButtonText}>Horários de Funcionamento</Text>
         </TouchableOpacity>
       </View>
+      <View style={styles.logoutContainer}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <MaterialIcons name="logout" size={24} color="#8A5A00" />
+          <Text style={styles.logoutText}>Sair</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.footer}>
         <Text style={styles.footerText}>© {new Date().getFullYear()} - Todos os direitos reservados</Text>
       </View>
@@ -67,7 +88,7 @@ const Index: any = () => {
   );
 };
 
-const styles: any = StyleSheet.create({
+const styles: { [key: string]: any } = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FCF5E5',
@@ -144,6 +165,26 @@ const styles: any = StyleSheet.create({
     color: '#8A5A00',
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
+  },
+  logoutContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9D71C',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    elevation: 3,
+  },
+  logoutText: {
+    color: '#8A5A00',
+    fontSize: 18,
+    fontWeight: 'bold',
     marginLeft: 8,
   },
   footer: {

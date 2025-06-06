@@ -9,22 +9,30 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { User, MessageSquare, ChevronDown } from 'lucide-react-native';
+import { User, MessageSquare, ChevronDown, LogOut } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const MenuUsuario: React.FC<any> = ({ navigation }) => {
+type RootStackParamList = {
+  Login: undefined;
+  TelaChat: undefined;
+  ContaUsuario: undefined;
+};
+
+interface MenuUsuarioProps {
+  navigation: NativeStackNavigationProp<RootStackParamList, any>;
+}
+
+const MenuUsuario: React.FC<MenuUsuarioProps> = ({ navigation }) => {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<string>('');
   const [selectedRestaurantName, setSelectedRestaurantName] = useState<string>('');
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
+    const fetchRestaurants = async (): Promise<void> => {
       try {
         const response = await fetch(process.env.EXPO_PUBLIC_API_URL + '/restaurants');
         const data = await response.json();
@@ -37,7 +45,7 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
     fetchRestaurants();
   }, []);
 
-  const handleRestaurantSelect = async (restaurant: any) => {
+  const handleRestaurantSelect = async (restaurant: any): Promise<void> => {
     setSelectedRestaurant(restaurant._id);
     setSelectedRestaurantName(restaurant.name);
     setModalVisible(false);
@@ -45,6 +53,13 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
     await AsyncStorage.setItem('selectedRestaurantEmail', restaurant.email);
   };
 
+  const handleLogout = async (): Promise<void> => {
+    await AsyncStorage.clear();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
 
   const renderRestaurantItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -58,13 +73,11 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FCF5E5" />
-      
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Qual é a pedida</Text>
           <Text style={styles.subtitle}>pra hoje?</Text>
         </View>
-
         <View style={styles.restaurantSelector}>
           <Text style={styles.selectorLabel}>Escolha um restaurante:</Text>
           <TouchableOpacity
@@ -80,7 +93,6 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
             <ChevronDown size={20} color="#8A5A00" />
           </TouchableOpacity>
         </View>
-        
         <View style={styles.optionsContainer}>
           <TouchableOpacity
             style={[
@@ -95,7 +107,6 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
             </View>
             <Text style={styles.optionText}>Chatbot para{'\n'}pedidos</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity
             style={styles.optionButton}
             onPress={() => navigation.navigate('ContaUsuario')}
@@ -107,11 +118,15 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-      
+      <View style={styles.logoutContainer}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <LogOut size={24} color="#8A5A00" />
+          <Text style={styles.logoutText}>Sair</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.footer}>
         <Text style={styles.footerText}>© 2025 - Todos os direitos reservados</Text>
       </View>
-
       <Modal
         animationType="slide"
         transparent={true}
@@ -146,7 +161,7 @@ const MenuUsuario: React.FC<any> = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles: { [key: string]: any } = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FCF5E5',
@@ -242,6 +257,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  logoutContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9D71C',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    elevation: 3,
+  },
+  logoutText: {
+    color: '#8A5A00',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   footer: {
     padding: 20,

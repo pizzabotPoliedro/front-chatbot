@@ -86,7 +86,7 @@ const Login: any = () => {
         >
           <View style={styles.logoContainer}>
             <Image 
-              source={require('./unnamed.jpg')} 
+              source={require('./Robozinho.png')} 
               style={styles.logo}
               resizeMode="contain"
             />
