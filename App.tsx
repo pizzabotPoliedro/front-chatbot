@@ -16,6 +16,7 @@ import ContaRestaurante from './src/screens/ContaRestaurante';
 import Login from './src/screens/Login';
 import HorarioFuncionamento from './src/screens/HorarioDeFuncionamento';
 import Admin from './src/screens/Admin';
+import PedidosUsuario from './src/screens/PedidosUsuario';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +41,7 @@ export default function App() {
           <Stack.Screen name="Index" component={Index} />
           <Stack.Screen name="Cardapio" component={Cardapio} />
           <Stack.Screen name="Pedidos" component={Pedidos} />
+          <Stack.Screen name="PedidosUsuario" component={PedidosUsuario} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

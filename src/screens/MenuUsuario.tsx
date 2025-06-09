@@ -10,18 +10,13 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import { User, MessageSquare, ChevronDown, LogOut } from 'lucide-react-native';
+import { User, MessageSquare, ChevronDown, LogOut, List } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type RootStackParamList = {
-  Login: undefined;
-  TelaChat: undefined;
-  ContaUsuario: undefined;
-};
 
 interface MenuUsuarioProps {
-  navigation: NativeStackNavigationProp<RootStackParamList, any>;
+  navigation: NativeStackNavigationProp<any, any>;
 }
 
 const MenuUsuario: React.FC<MenuUsuarioProps> = ({ navigation }) => {
@@ -106,6 +101,15 @@ const MenuUsuario: React.FC<MenuUsuarioProps> = ({ navigation }) => {
               <MessageSquare size={28} color="white" />
             </View>
             <Text style={styles.optionText}>Chatbot para{'\n'}pedidos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => navigation.navigate('PedidosUsuario')}
+          >
+            <View style={styles.iconContainer}>
+              <List size={28} color="white" />
+            </View>
+            <Text style={styles.optionText}>Meus Pedidos</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.optionButton}

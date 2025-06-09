@@ -55,9 +55,9 @@ const Login: any = () => {
         await AsyncStorage.setItem('token', data.token);
         const decodedToken: any = jwtDecode(data.token);
         if (decodedToken.restaurant) {
-          navigation.navigate('Index');
+          decodedToken.admin == true? navigation.navigate('Admin') : navigation.navigate('Index');
         } else {
-          navigation.navigate('MenuUsuario');
+          decodedToken.admin == true? navigation.navigate('Admin') : navigation.navigate('MenuUsuario');
         }
       } else {
         setError(data.error || 'Email ou senha inválidos.');

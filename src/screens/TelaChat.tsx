@@ -566,7 +566,7 @@ const TelaChat = ({ navigation }: { navigation: any }) => {
     setModalVisible(true);
     setModalType('menu');
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/menu/${restaurantId}`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/menu/${restaurantId}/activated`, {
         method: 'GET'
       });
       if (response.ok) {
@@ -586,7 +586,7 @@ const TelaChat = ({ navigation }: { navigation: any }) => {
     setPedidoLoading(true);
     setPedidoModalVisible(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/menu/${restaurantId}`, { method: 'GET' });
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/menu/${restaurantId}/activated`, { method: 'GET' });
       if (response.ok) {
         const data = await response.json();
         setMenuItems(data.items || []);

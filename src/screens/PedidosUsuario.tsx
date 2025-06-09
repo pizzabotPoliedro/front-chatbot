@@ -5,8 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Modal,
-  Alert,
   ActivityIndicator,
   RefreshControl
 } from 'react-native';
@@ -32,7 +30,6 @@ type Order = {
   status: OrderStatusType;
   items: Item[];
   total?: number;
-  userName?: string;
 };
 
 const statusApiToFront: Record<string, OrderStatusType> = {
@@ -41,20 +38,11 @@ const statusApiToFront: Record<string, OrderStatusType> = {
   'DELIVERED': 'Entregue'
 };
 
-const statusFrontToApi: Record<OrderStatusType, string> = {
-  'Pendente': 'PENDING',
-  'Cancelado': 'CANCELED',
-  'Entregue': 'DELIVERED'
-};
-
-const Pedidos = ({ navigation }: any) => {
+const PedidosUsuario = ({ navigation }: any) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | OrderStatusType>('all');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [statusLoading, setStatusLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -69,15 +57,10 @@ const Pedidos = ({ navigation }: any) => {
       if (!token) throw new Error('Token não encontrado');
       const decoded: any = jwtDecode(token);
       const userId = decoded.sub;
-      const [ordersRes, usersRes] = await Promise.all([
-        axios.get(`${apiUrl}/orders/restaurant/${userId}`),
-        axios.get(`${apiUrl}/users`)
-      ]);
-      const usersMap: Record<string, string> = {};
-      usersRes.data.forEach((user: any) => {
-        usersMap[user._id] = user.name;
-      });
-      const formattedOrders: Order[] = ordersRes.data
+      const restaurantId = await AsyncStorage.getItem('selectedRestaurantId');
+      if (!restaurantId) throw new Error('Restaurante não selecionado');
+      const response = await axios.get(`${apiUrl}/orders/${userId}/${restaurantId}`);
+      const formattedOrders: Order[] = response.data
         .filter((order: any) => ['PENDING', 'CANCELED', 'DELIVERED'].includes(order.status?.toUpperCase()))
         .map((order: any) => ({
           id: order._id,
@@ -88,8 +71,7 @@ const Pedidos = ({ navigation }: any) => {
             quantity: item.quantity,
             price: item.item_price
           })),
-          total: order.total,
-          userName: usersMap[order.user_id] || 'Desconhecido'
+          total: order.total
         }));
       setOrders(formattedOrders);
       setError('');
@@ -109,32 +91,6 @@ const Pedidos = ({ navigation }: any) => {
     setRefreshing(true);
     fetchOrders();
   }, []);
-
-  const handleStatusChange = async (newStatus: OrderStatusType) => {
-    if (!selectedOrder) return;
-    setStatusLoading(true);
-    try {
-      const token = await getToken();
-      await axios.put(
-        `${apiUrl}/orders/${selectedOrder.id}/status`,
-        { status: statusFrontToApi[newStatus] },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === selectedOrder.id
-            ? { ...order, status: newStatus }
-            : order
-        )
-      );
-      setModalVisible(false);
-      setSelectedOrder(null);
-    } catch (err) {
-      Alert.alert('Erro', 'Falha ao atualizar status');
-    } finally {
-      setStatusLoading(false);
-    }
-  };
 
   const OrderStatus = ({ status }: { status: OrderStatusType }) => {
     let backgroundColor, textColor, Icon;
@@ -168,19 +124,11 @@ const Pedidos = ({ navigation }: any) => {
   };
 
   const OrderCard = ({ order }: { order: Order }) => (
-    <TouchableOpacity
-      style={styles.orderCard}
-      onLongPress={() => {
-        setSelectedOrder(order);
-        setModalVisible(true);
-      }}
-      activeOpacity={0.9}
-    >
+    <View style={styles.orderCard}>
       <View style={styles.orderHeader}>
         <View>
           <Text style={styles.orderId}>Pedido #{order.id.slice(-4)}</Text>
           <Text style={styles.orderDate}>{order.date}</Text>
-          <Text style={styles.userName}>Cliente: {order.userName}</Text>
         </View>
         <OrderStatus status={order.status} />
       </View>
@@ -196,8 +144,7 @@ const Pedidos = ({ navigation }: any) => {
         ))}
       </View>
       <Text style={styles.totalText}>Total: R$ {order.total?.toFixed(2)}</Text>
-      <Text style={styles.longPressHint}>Mantenha pressionado para alterar status</Text>
-    </TouchableOpacity>
+    </View>
   );
 
   if (loading) {
@@ -271,44 +218,6 @@ const Pedidos = ({ navigation }: any) => {
           </View>
         )}
       </ScrollView>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Alterar Status - Pedido #{selectedOrder?.id.slice(-4)}</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                <X size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-            {statusLoading ? (
-              <View style={{ alignItems: 'center', marginVertical: 24 }}>
-                <ActivityIndicator size="large" color="#F9A826" />
-                <Text style={{ marginTop: 16, color: '#8A5A00', fontWeight: '600' }}>Alterando status...</Text>
-              </View>
-            ) : (
-              <View style={styles.statusOptionsContainer}>
-                <TouchableOpacity style={styles.statusOption} onPress={() => handleStatusChange('Pendente')}>
-                  <Clock size={20} color="#8A5A00" />
-                  <Text style={[styles.statusOptionText, { color: '#8A5A00' }]}>Pendente</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.statusOption} onPress={() => handleStatusChange('Entregue')}>
-                  <Check size={20} color="#137333" />
-                  <Text style={[styles.statusOptionText, { color: '#137333' }]}>Entregue</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.statusOption} onPress={() => handleStatusChange('Cancelado')}>
-                  <X size={20} color="#C5221F" />
-                  <Text style={[styles.statusOptionText, { color: '#C5221F' }]}>Cancelado</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -405,11 +314,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
-  userName: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 2,
-  },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -456,16 +360,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 8,
   },
-  longPressHint: {
-    fontSize: 11,
-    color: '#999',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F5F5F5',
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -490,56 +384,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 280,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    width: '90%',
-    maxWidth: 400,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#8A5A00',
-    flex: 1,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F9A826',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statusOptionsContainer: {
-    gap: 12,
-  },
-  statusOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-  },
-  statusOptionText: {
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: '500',
-  },
 });
 
-export default Pedidos;
+export default PedidosUsuario;
