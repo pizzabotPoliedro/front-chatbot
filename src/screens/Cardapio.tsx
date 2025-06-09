@@ -13,6 +13,7 @@ import {
   TouchableWithoutFeedback,
   ActivityIndicator,
   ScrollView,
+  Switch,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Plus, Trash, CheckSquare, Square, X } from 'lucide-react-native';
@@ -30,6 +31,7 @@ interface MenuItem {
   price: string;
   description: string;
   image?: string | null;
+  active?: boolean;
 }
 
 const Cardapio = () => {
@@ -234,6 +236,22 @@ const Cardapio = () => {
     return false;
   };
 
+  const handleToggleActive = async (item: MenuItem) => {
+    if (!restaurantId) return;
+    setLoading(true);
+    try {
+      await axios.put(`${API_URL}/menu/active/${item._id}`, {
+        active: !item.active,
+      });
+      setMenuItems((prev) =>
+        prev.map((i) =>
+          i._id === item._id ? { ...i, active: !i.active } : i
+        )
+      );
+    } catch (e) {}
+    setLoading(false);
+  };
+
   const renderMenuItem = ({ item }: { item: MenuItem }) => {
     const isSelected = selectedIds.includes(item._id);
     return (
@@ -269,6 +287,18 @@ const Cardapio = () => {
           <Text style={styles.itemName}>{item.name}</Text>
           <Text style={styles.itemDescription}>{item.description}</Text>
           <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+        </View>
+        <View style={{ marginLeft: 12, alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, color: item.active ? '#228B22' : '#B22222', marginBottom: 2 }}>
+            {item.active ? 'Ativo' : 'Inativo'}
+          </Text>
+          <Switch
+            value={!!item.active}
+            onValueChange={() => handleToggleActive(item)}
+            disabled={loading}
+            thumbColor={item.active ? '#DAA520' : '#ccc'}
+            trackColor={{ false: '#eee', true: '#FFDB58' }}
+          />
         </View>
       </TouchableOpacity>
     );
@@ -320,7 +350,6 @@ const Cardapio = () => {
           )}
         </View>
       </View>
-
       {loading ? (
         <ActivityIndicator size="large" color="#DAA520" style={{ marginTop: 40 }} />
       ) : (
@@ -337,7 +366,6 @@ const Cardapio = () => {
           }
         />
       )}
-
       <Modal visible={isAddModalVisible} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.modalContainer}>
@@ -447,7 +475,6 @@ const Cardapio = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
       <Modal visible={editModalVisible} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.modalContainer}>
@@ -572,7 +599,6 @@ const Cardapio = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
       {(creating || editing || loading) && (
         <View style={styles.globalLoadingOverlay}>
           <ActivityIndicator size="large" color="#FFF" />
@@ -707,5 +733,4 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
 });
-
 export default Cardapio;
